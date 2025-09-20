@@ -121,10 +121,10 @@ AppWindow::AppWindow(I_GUIWindowImp &imp) : GUIWindow(imp) {
     SelectProjectDialog *spd = new SelectProjectDialog(*_currentView);
     _currentView->DoModal(spd, ProjectSelectCallback);
 
-    memset(_charScreen, ' ', 1200);
-    memset(_preScreen, ' ', 1200);
-    memset(_charScreenProp, 0, 1200);
-    memset(_preScreenProp, 0, 1200);
+    memset(_charScreen, ' ', APPW_SCREENBUFF_SIZE);
+    memset(_preScreen, ' ', APPW_SCREENBUFF_SIZE);
+    memset(_charScreenProp, 0, APPW_SCREENBUFF_SIZE);
+    memset(_preScreenProp, 0, APPW_SCREENBUFF_SIZE);
 
     Redraw();
 };
@@ -136,28 +136,28 @@ void AppWindow::DrawString(const char *string, GUIPoint &pos,
 
     // we know we don't have mode than 40 chars
 
-    char buffer[41];
+    char buffer[APPW_WIDTH + 1];
     int len = strlen(string);
-    int offset = (pos._x < 0) ? -pos._x / 8 : 0;
+    int offset = (pos._x < 0) ? -pos._x / charHeight_ : 0;
     len -= offset;
-    int available = 40 - ((pos._x < 0) ? 0 : pos._x);
+    int available = APPW_WIDTH - ((pos._x < 0) ? 0 : pos._x);
     len = MIN(len, available);
     memcpy(buffer, string + offset, len);
     buffer[len] = 0;
 
-    NAssert((pos._x < 40) && (pos._y < 30));
-    int index = pos._x + 40 * pos._y;
+    NAssert((pos._x < APPW_WIDTH) && (pos._y < APPW_HEIGHT));
+    int index = pos._x + APPW_WIDTH * pos._y;
     memcpy(_charScreen + index, buffer, len);
     unsigned char prop = colorIndex_ + (props.invert_ ? PROP_INVERT : 0);
     memset(_charScreenProp + index, prop, len);
 };
 
 void AppWindow::Clear(bool all) {
-    memset(_charScreen, ' ', 1200);
-    memset(_charScreenProp, 0, 1200);
+    memset(_charScreen, ' ', APPW_SCREENBUFF_SIZE);
+    memset(_charScreenProp, 0, APPW_SCREENBUFF_SIZE);
     if (all) {
-        memset(_preScreen, ' ', 1200);
-        memset(_preScreenProp, 0, 1200);
+        memset(_preScreen, ' ', APPW_SCREENBUFF_SIZE);
+        memset(_preScreenProp, 0, APPW_SCREENBUFF_SIZE);
     };
 };
 
@@ -168,15 +168,15 @@ void AppWindow::ClearRect(GUIRect &r) {
     int w = r.Width();
     int h = r.Height();
 
-    unsigned char *st = _charScreen + x + (40 * y);
-    unsigned char *pr = _charScreenProp + x + (40 * y);
+    unsigned char *st = _charScreen + x + (APPW_WIDTH * y);
+    unsigned char *pr = _charScreenProp + x + (APPW_WIDTH * y);
     for (int i = 0; i < h; i++) {
         for (int j = 0; j < w; j++) {
             *st++ = ' ';
             *pr++ = 0;
         }
-        st += (40 - w);
-        pr += (40 - w);
+        st += (APPW_WIDTH - w);
+        pr += (APPW_WIDTH - w);
     }
 };
 
@@ -218,8 +218,8 @@ void AppWindow::Flush() {
     unsigned char *previous = _preScreen;
     unsigned char *currentProp = _charScreenProp;
     unsigned char *previousProp = _preScreenProp;
-    for (int y = 0; y < 30; y++) {
-        for (int x = 0; x < 40; x++) {
+    for (int y = 0; y < APPW_HEIGHT; y++) {
+        for (int x = 0; x < APPW_WIDTH; x++) {
 #ifndef _LGPT_NO_SCREEN_CACHE_
             if ((*current != *previous) || (*currentProp != *previousProp)) {
 #endif
@@ -292,8 +292,8 @@ void AppWindow::Flush() {
     long flushEnd = System::GetInstance()->GetClock();
     GUIWindow::Flush();
     Unlock();
-    memcpy(_preScreen, _charScreen, 1200);
-    memcpy(_preScreenProp, _charScreenProp, 1200);
+    memcpy(_preScreen, _charScreen, APPW_SCREENBUFF_SIZE);
+    memcpy(_preScreenProp, _charScreenProp, APPW_SCREENBUFF_SIZE);
 };
 
 void AppWindow::LoadProject(const Path &p) {
@@ -600,17 +600,18 @@ void AppWindow::onQuitApp() {
     player->Reset();
     System::GetInstance()->PostQuitMessage();
 }
+
 void AppWindow::Print(char *line) {
 
     //	GUIWindow::Clear(View::backgroundColor_,true) ;
     Clear();
     strcpy(_statusLine, line);
     // unwrapped for gcc
-    int position = 40;
+    int position = APPW_WIDTH;
     position -= strlen(_statusLine);
     position /= 2;
     GUIPoint pos(position, 12);
-    //
+
     GUITextProperties props;
     SetColor(CD_NORMAL);
     DrawString(_statusLine, pos, props);
@@ -618,7 +619,7 @@ void AppWindow::Print(char *line) {
     sprintf(buildString, "Piggy build %s.%s.%s", PROJECT_NUMBER,
             PROJECT_RELEASE, BUILD_COUNT);
     pos._y = 28;
-    pos._x = (40 - strlen(buildString)) / 2;
+    pos._x = (APPW_WIDTH - strlen(buildString)) / 2;
     DrawString(buildString, pos, props);
     Flush();
 };

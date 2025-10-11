@@ -580,7 +580,7 @@ RTRG 0101: does not do anything because after looping one tick, you move forward
 
 # Rendering
 
-Some people exploit the analog gap between their device's headphone output and whatever they are recording with. Alternately, you can start piggy in rendering mode so it will output 16bit, 44100Hz .WAV files.
+Some people exploit the analog gap between their device's headphone output and whatever they are recording with. Alternatively, you can start piggy in rendering mode so it will output 16bit, 44100Hz .WAV files.
 Please note that RENDER mode is not intended to be functional on the GP2X Builds.
 The following values can set for RENDER in the config.xml:
 
@@ -601,3 +601,5 @@ Remember, any of the config.xml parameters can be specified to lgpt on the comma
 ```
 lgpt -RENDER=FILE
 ```
+
+The audio will be rendered as `mixdown.wav` in your project folder, or `channel1.wav` etc. if you use FILESPLIT (RT).
